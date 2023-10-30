@@ -5,11 +5,13 @@ const {
   getUser,
   deleteUser,
   getAllUser,
+  loginUser,
 } = require("../Controller/UserController");
 const router = express.Router();
 
 router.post("/register", createUser);
-router.put("/update-user", updateUser);
+router.post("/login", loginUser);
+router.put("/update-user/:id", updateUser);
 router.get("/:id", getUser);
 router.delete("/:id", deleteUser);
 router.get("/", getAllUser);
