@@ -1,5 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const User = require("../Models/UserModel");
+const { generateRefreshToken } = require("../Config/refreshToken");
+const { generateToken } = require("../Config/jwtToken");
 
 //POST - Create a new user
 const createUser = asyncHandler(async (req, res) => {
@@ -28,7 +30,31 @@ const loginUser = asyncHandler(async (req, res) => {
 
     const correctPassword = await user.isPasswordMatched(password);
     if (user && correctPassword) {
-      res.json(user);
+      const refreshToken = await generateRefreshToken(user._id);
+      const updateUser = await User.findByIdAndUpdate(
+        user._id,
+        {
+          refreshToken: refreshToken,
+        },
+        {
+          new: true,
+        }
+      );
+      
+      res.cookie("cookie", refreshToken, {
+        httpOnly: true,
+        maxAge: 72 * 60 * 60 * 1000,
+      });
+
+      res.json({
+        _id: user?._id,
+        firstname: user?.firstname,
+        lastname: user?.lastname,
+        email: user?.email,
+        mobile: user?.mobile,
+        password: user?.password,
+        token: generateToken(user._id),
+      });
     } else {
       throw new Error("Invalid email or password");
     }
@@ -67,40 +93,39 @@ const updateUser = asyncHandler(async (req, res) => {
 const deleteUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
   try {
-    const user = await User.findByIdAndDelete(id)
+    const user = await User.findByIdAndDelete(id);
     res.json({
-        status : "Deleted Successfully",
-        message : user,
-    })
+      status: "Deleted Successfully",
+      message: user,
+    });
   } catch (error) {
-    throw new Error("Could not delete user")
+    throw new Error("Could not delete user");
   }
-//   res.json({ message: `Deleted user ${id}` });
+  //   res.json({ message: `Deleted user ${id}` });
 });
 
 //GET - Get a user BY ID
 const getUser = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-try {
-    const user = await User.findById(id)
+  const { _id } = req.user;
+  try {
+    const user = await User.findById(_id);
     res.json(user);
-} catch (error) {
-    
-}
-//   res.json({ message: `Get user by ID ${id}` });
+  } catch (error) {
+    throw new Error("Could not get user by ID")
+  }
+  //   res.json({ message: `Get user by ID ${id}` });
 });
 
 //GET - Get ALL user
 const getAllUser = asyncHandler(async (req, res) => {
-try {
-    const user = await User.find()
+  try {
+    const user = await User.find();
     res.json(user);
+  } catch (error) {
+    throw new Error("Couldn't get all users");
+  }
 
-} catch (error) {
-    throw new Error("Couldn't get all users")
-}
-
-//   res.json({ message: `Get all user list` });
+  //   res.json({ message: `Get all user list` });
 });
 
 module.exports = {
