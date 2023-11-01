@@ -6,6 +6,8 @@ const {
   deleteUser,
   getAllUser,
   loginUser,
+  logoutUser,
+  handleRefreshToken,
 } = require("../Controller/UserController");
 const { authMiddleware } = require("../Middleware/AuthMiddleware");
 const router = express.Router();
@@ -16,5 +18,7 @@ router.put("/update-user/:id", updateUser);
 router.get("/:id", authMiddleware, getUser);
 router.delete("/:id", deleteUser);
 router.get("/", getAllUser);
+router.get("/logout", logoutUser);
+router.get("/refresh", handleRefreshToken);
 
 module.exports = router;

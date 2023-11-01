@@ -2,6 +2,7 @@ const asyncHandler = require("express-async-handler");
 const User = require("../Models/UserModel");
 const { generateRefreshToken } = require("../Config/refreshToken");
 const { generateToken } = require("../Config/jwtToken");
+const jwt = require('jsonwebtoken')
 
 //POST - Create a new user
 const createUser = asyncHandler(async (req, res) => {
@@ -40,12 +41,11 @@ const loginUser = asyncHandler(async (req, res) => {
           new: true,
         }
       );
-      
-      res.cookie("cookie", refreshToken, {
+
+      res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
         maxAge: 72 * 60 * 60 * 1000,
       });
-
       res.json({
         _id: user?._id,
         firstname: user?.firstname,
@@ -61,6 +61,33 @@ const loginUser = asyncHandler(async (req, res) => {
   } catch (error) {
     throw new Error("Invalid credentials");
   }
+});
+
+//HANDLE REFRESHTOKEN
+const handleRefreshToken = asyncHandler(async (req, res) => {
+  const cookie = req.cookies;
+  console.log(cookie)
+  if (!cookie?.refreshToken)
+    throw new Error("No Refresh token available in cookies");
+
+  const refreshToken = cookie.refreshToken;
+    console.log(refreshToken);
+
+  const user = await User.findOne({ refreshToken });
+  if (!user) throw new Error("User not found");
+
+  jwt.verify(refreshToken, process.env.JWT_SECRET, (err, decoded) => {
+    console.log(decoded);
+    if (err || user.id !== decoded.id) {
+      throw new Error("There is something wrong with refresh token");
+    }
+    const accessToken = generateToken(user._id);
+    console.log(accessToken);
+    res.json({ accessToken });
+  });
+  //   res.json(user);
+
+  // console.log(cookie);
 });
 
 //UPDAT - Update a user
@@ -111,7 +138,7 @@ const getUser = asyncHandler(async (req, res) => {
     const user = await User.findById(_id);
     res.json(user);
   } catch (error) {
-    throw new Error("Could not get user by ID")
+    throw new Error("Could not get user by ID");
   }
   //   res.json({ message: `Get user by ID ${id}` });
 });
@@ -128,11 +155,35 @@ const getAllUser = asyncHandler(async (req, res) => {
   //   res.json({ message: `Get all user list` });
 });
 
+const logoutUser = asyncHandler(async (req, res) => {
+  const cookie = req.cookies;
+  if (!cookie?.refreshToken)
+    throw new Error("No refresh token available in cookie");
+
+  const refreshToken = cookie.refreshToken;
+  const user = await User.findOne({ refreshToken });
+  if (!user) {
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: true,
+    });
+    return res.sendStatus(204);
+  }
+  await User.findOneAndUpdate({ refreshToken }, { refreshToken: "" });
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: true,
+  });
+  res.sendStatus(204);
+});
+
 module.exports = {
   createUser,
   loginUser,
   updateUser,
   deleteUser,
+  handleRefreshToken,
   getAllUser,
   getUser,
+  logoutUser,
 };
