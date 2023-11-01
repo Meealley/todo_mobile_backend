@@ -92,11 +92,11 @@ const handleRefreshToken = asyncHandler(async (req, res) => {
 
 //UPDAT - Update a user
 const updateUser = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-
+  const { _id } = req.user;
+console.log(req.user)
   try {
     const user = await User.findByIdAndUpdate(
-      id,
+      _id,
       {
         firstname: req?.body.firstname,
         lastname: req?.body.lastname,
@@ -110,7 +110,7 @@ const updateUser = asyncHandler(async (req, res) => {
     );
     res.json(user);
   } catch (error) {
-    throw new Error("Counld not update user");
+    throw new Error("Could not update user");
   }
 
   res.json({ message: "Updated" });
@@ -133,12 +133,12 @@ const deleteUser = asyncHandler(async (req, res) => {
 
 //GET - Get a user BY ID
 const getUser = asyncHandler(async (req, res) => {
-  const { _id } = req.user;
+  const { id } = req.params;
   try {
-    const user = await User.findById(_id);
+    const user = await User.findById(id);
     res.json(user);
   } catch (error) {
-    throw new Error("Could not get user by ID");
+    throw new Error("Could not get user by IDs");
   }
   //   res.json({ message: `Get user by ID ${id}` });
 });
