@@ -77,7 +77,7 @@ const handleRefreshToken = asyncHandler(async (req, res) => {
   if (!user) throw new Error("User not found");
 
   jwt.verify(refreshToken, process.env.JWT_SECRET, (err, decoded) => {
-    console.log(decoded);
+   
     if (err || user.id !== decoded.id) {
       throw new Error("There is something wrong with refresh token");
     }

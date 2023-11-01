@@ -14,11 +14,11 @@ const router = express.Router();
 
 router.post("/register", createUser);
 router.post("/login", loginUser);
-router.put("/update-user", authMiddleware, updateUser);
 router.get("/:id", authMiddleware, getUser);
-router.delete("/:id", deleteUser);
-router.get("/", getAllUser);
 router.get("/logout", logoutUser);
 router.get("/refresh", handleRefreshToken);
+router.get("/", getAllUser);
+router.put("/update-user", authMiddleware, updateUser);
+router.delete("/:id", deleteUser);
 
 module.exports = router;
